@@ -29,12 +29,16 @@ class FadeOutParticle extends StatefulWidget {
   /// curve of animation
   final Curve curve;
 
+  /// callback to get notified when animation is ended
+  final VoidCallback? onAnimationEnd;
+
   /// Fade out Particle effect
   const FadeOutParticle({
     required this.disappear,
     required this.child,
     this.duration = const Duration(milliseconds: 1500),
     this.curve = Curves.easeOut,
+    this.onAnimationEnd,
     super.key,
   });
 
@@ -48,7 +52,11 @@ class _FadeOutParticleState extends State<FadeOutParticle>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: widget.duration,
-  );
+  )..addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        widget.onAnimationEnd?.call();
+      }
+    });
   late final CurvedAnimation _animation = CurvedAnimation(
     parent: _controller,
     curve: widget.curve,

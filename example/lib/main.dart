@@ -44,14 +44,16 @@ class _HomePageState extends State<HomePage> {
                     size: 52,
                     color: Theme.of(context).primaryColorDark,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(width: 8),
                   Text(
                     'Fade out Particle',
                     style: Theme.of(context).textTheme.headline6,
                   ),
                 ],
               ),
+              onAnimationEnd: () => print('animation ended'),
             ),
+            const SizedBox(height: 72),
             OutlinedButton(
               onPressed: () => setState(() => _disappear = !_disappear),
               child: Text(_disappear ? 'Reset' : 'Start'),

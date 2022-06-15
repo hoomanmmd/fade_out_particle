@@ -2,7 +2,7 @@ part of 'fade_out_particle.dart';
 
 extension _IntExtensions on int {
   Color withOpacity(double opacity) {
-    final resultOpacity = (opacity * (this & 0xFF)).toInt();
+    final resultOpacity = (opacity * (this & 0xFF) * 0.8).toInt();
     return Color((this >> 8 & 0x00FFFFFF) | (resultOpacity << 24));
   }
 }
@@ -12,6 +12,8 @@ extension _DoubleExtensions on double {
     switch (type) {
       case 0:
         return this * this * ((1.7 + 1) * this - 1.7);
+      case 1:
+        return math.sqrt(1.1 - (this - 1) * (this - 1));
       case 2:
         return math.pow(this, 2.0).toDouble();
       case 3:
@@ -24,7 +26,9 @@ extension _DoubleExtensions on double {
   }
 
   double particleProgress(double width) =>
-      math.min(1, this / math.min(width, 128));
+      math.min(1, this / width.limitedAnimationWidth);
+
+  double get limitedAnimationWidth => math.min(this, 128);
 }
 
 extension _ByteDataExtensions on ByteData {

@@ -42,7 +42,8 @@ class _RenderBox extends RenderProxyBox {
     super.paint(context, offset);
 
     paint.blendMode = BlendMode.clear;
-    final limit = (1 - _progress * 2) * width;
+    final limit =
+        width - width * (1 + width.limitedAnimationWidth / width) * _progress;
     canvas.drawRect(Rect.fromLTRB(limit, -1, width + 1, height + 1), paint);
 
     canvas.restore();
