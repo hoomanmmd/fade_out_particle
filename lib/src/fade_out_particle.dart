@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -61,7 +62,7 @@ class _FadeOutParticleState extends State<FadeOutParticle>
     parent: _controller,
     curve: widget.curve,
   );
-  List<Particle?>? _particles;
+  LinkedList<Particle>? _particles;
 
   @override
   void initState() {
@@ -120,28 +121,31 @@ class _FadeOutParticleState extends State<FadeOutParticle>
     final verticalCount = math.max(1, height ~/ _spaceBetweenParticles);
     final horizontalCount = math.max(1, width ~/ _spaceBetweenParticles);
 
-    final particles =
-        List<Particle?>.filled(verticalCount * horizontalCount, null);
+    final particles = LinkedList<Particle>();
     int horizontalOffset;
     const halfSpace = _spaceBetweenParticles ~/ 2;
     int verticalOffset = halfSpace;
-    int listIndex = 0;
     final random = math.Random();
     for (int i = 0; i < verticalCount; i++) {
       horizontalOffset = halfSpace;
       for (var j = 0; j < horizontalCount; j++) {
-        particles[listIndex++] = Particle(
-          cx: horizontalOffset,
-          cy: verticalOffset,
-          rgbaColor: bytes.maybeNonTransparentColor(
-            horizontalOffset,
-            verticalOffset,
-            width,
-            halfSpace,
-          ),
-          radius: _generateRandomRadius(random),
-          pathType: random.nextInt(6),
+        final rgbaColor = bytes.maybeNonTransparentColor(
+          horizontalOffset,
+          verticalOffset,
+          width,
+          halfSpace,
         );
+        if (!rgbaColor.isTransparent) {
+          particles.add(
+            Particle(
+              cx: horizontalOffset,
+              cy: verticalOffset,
+              rgbaColor: rgbaColor,
+              radius: _generateRandomRadius(random),
+              pathType: random.nextInt(6),
+            ),
+          );
+        }
         horizontalOffset += _spaceBetweenParticles;
       }
       verticalOffset += _spaceBetweenParticles;

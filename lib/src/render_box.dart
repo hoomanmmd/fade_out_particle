@@ -2,7 +2,7 @@ part of 'fade_out_particle.dart';
 
 class _RenderBox extends RenderProxyBox {
   double _progress;
-  List<Particle?>? _particles;
+  LinkedList<Particle>? _particles;
 
   _RenderBox(this._progress, this._particles);
 
@@ -17,7 +17,7 @@ class _RenderBox extends RenderProxyBox {
     markNeedsPaint();
   }
 
-  set particles(List<Particle?>? newValue) {
+  set particles(LinkedList<Particle>? newValue) {
     if (newValue == _particles) {
       return;
     }
@@ -44,7 +44,7 @@ class _RenderBox extends RenderProxyBox {
     paint.blendMode = BlendMode.clear;
     final limit =
         width - width * (1 + width.limitedAnimationWidth / width) * _progress;
-    canvas.drawRect(Rect.fromLTRB(limit, -1, width + 1, height + 1), paint);
+    canvas.drawRect(Rect.fromLTRB(limit, -1.0, width + 1, height + 1), paint);
 
     canvas.restore();
 
@@ -55,10 +55,10 @@ class _RenderBox extends RenderProxyBox {
     }
   }
 
-  void _drawParticles(List<Particle?> particles, double limit, double width,
-      Paint paint, Canvas canvas) {
+  void _drawParticles(LinkedList<Particle> particles, double limit,
+      double width, Paint paint, Canvas canvas) {
     for (final particle in particles) {
-      if (particle!.cx < limit - 1) {
+      if (particle.cx < limit - 1) {
         continue;
       }
       final particleProgress = (particle.cx - limit).particleProgress(width);

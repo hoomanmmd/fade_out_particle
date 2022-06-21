@@ -5,6 +5,8 @@ extension _IntExtensions on int {
     final resultOpacity = (opacity * (this & 0xFF) * 0.8).toInt();
     return Color((this >> 8 & 0x00FFFFFF) | (resultOpacity << 24));
   }
+
+  bool get isTransparent => (this & 0xFF) == 0;
 }
 
 extension _DoubleExtensions on double {

@@ -1,8 +1,7 @@
-import 'package:flutter/widgets.dart';
+import 'dart:collection';
 
-@immutable
-class Particle {
-  const Particle({
+class Particle extends LinkedListEntry<Particle> {
+  Particle({
     required this.cx,
     required this.cy,
     required this.radius,

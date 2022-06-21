@@ -53,7 +53,7 @@ class _HomePageState extends State<HomePage> {
               ),
               onAnimationEnd: () => print('animation ended'),
             ),
-            const SizedBox(height: 72),
+            const SizedBox(height: 150),
             OutlinedButton(
               onPressed: () => setState(() => _disappear = !_disappear),
               child: Text(_disappear ? 'Reset' : 'Start'),

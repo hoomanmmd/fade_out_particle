@@ -7,7 +7,7 @@ FadeOutParticle is an animation for disappearing views like Text and Icon
 Add this line to your pubspec:
 ```yaml  
 dependencies:  
- fade_out_particle: ^1.1.0
+ fade_out_particle: ^1.1.1
 ```  
 
 ## Usage
