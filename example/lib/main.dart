@@ -40,14 +40,16 @@ class _HomePageState extends State<HomePage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.check_circle_sharp,
+                    Icons.flutter_dash,
                     size: 52,
                     color: Theme.of(context).primaryColorDark,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     'Fade out Particle',
-                    style: Theme.of(context).textTheme.headline6,
+                    style: Theme.of(context).textTheme.headline6?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
                   ),
                 ],
               ),

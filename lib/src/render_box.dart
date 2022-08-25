@@ -27,27 +27,42 @@ class _RenderBox extends RenderProxyBox {
 
   @override
   void paint(PaintingContext context, Offset offset) {
+    final child = this.child;
     if (child == null || _progress == 0) {
       super.paint(context, offset);
       return;
     }
-    final double width = child!.size.width;
-    final double height = child!.size.height;
+    final double width = child.size.width;
+    final double height = child.size.height;
     final canvas = context.canvas;
 
     final bounds = Rect.fromLTRB(0, 0, width + 1, height + 1);
     final paint = Paint();
+
     canvas.saveLayer(bounds, paint);
 
     super.paint(context, offset);
 
-    paint.blendMode = BlendMode.clear;
+    paint.blendMode = BlendMode.dstOut;
     final limit =
         width - width * (1 + width.limitedAnimationWidth / width) * _progress;
-    canvas.drawRect(Rect.fromLTRB(limit, -1.0, width + 1, height + 1), paint);
+    final fadingLimit = math.min(width / 3, 10);
+    final clipRect = Rect.fromLTRB(limit, -1.0, width + 1, height + 1);
+
+    paint.shader = ui.Gradient.linear(
+      Offset(limit, height / 2),
+      Offset(limit + fadingLimit, height / 2),
+      [
+        const Color(0),
+        const Color(-1),
+      ],
+    );
+
+    canvas.drawRect(clipRect, paint);
 
     canvas.restore();
 
+    paint.shader = null;
     paint.blendMode = BlendMode.srcOver;
 
     if (_particles != null) {

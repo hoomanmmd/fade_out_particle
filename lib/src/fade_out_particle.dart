@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:math' as math;
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
@@ -106,15 +107,20 @@ class _FadeOutParticleState extends State<FadeOutParticle>
   }
 
   Future<void> _prepareParticles() async {
-    RenderRepaintBoundary boundary =
-        _repaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-    final image = await boundary.toImage();
-    final bytes = await image.toByteData();
-    if (bytes == null || image.width < 2 || image.height < 2) {
+    final repaintContext = _repaintKey.currentContext;
+    if (repaintContext == null) {
       return;
     }
+    RenderRepaintBoundary boundary =
+        repaintContext.findRenderObject() as RenderRepaintBoundary;
+    final image = await boundary.toImage();
+    final bytes = await image.toByteData();
 
-    _generateParticles(bytes, image.width, image.height);
+    if (bytes != null && image.width >= 2 && image.height >= 2) {
+      _generateParticles(bytes, image.width, image.height);
+    }
+
+    image.dispose();
   }
 
   void _generateParticles(ByteData bytes, int width, int height) {

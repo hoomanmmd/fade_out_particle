@@ -1,3 +1,7 @@
+## 1.2.0
+* Improve Animation
+* fix leakage
+
 ## 1.1.1
 * Improve Performance
 

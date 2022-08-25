@@ -2,7 +2,7 @@ part of 'fade_out_particle.dart';
 
 extension _IntExtensions on int {
   Color withOpacity(double opacity) {
-    final resultOpacity = (opacity * (this & 0xFF) * 0.8).toInt();
+    final resultOpacity = (opacity * (this & 0xFF) * 0.7).toInt();
     return Color((this >> 8 & 0x00FFFFFF) | (resultOpacity << 24));
   }
 
