@@ -1,3 +1,6 @@
+## 1.2.1
+* Fix need paint 
+
 ## 1.2.0
 * Improve Animation
 * fix leakage

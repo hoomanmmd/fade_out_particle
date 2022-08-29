@@ -113,7 +113,15 @@ class _FadeOutParticleState extends State<FadeOutParticle>
     }
     RenderRepaintBoundary boundary =
         repaintContext.findRenderObject() as RenderRepaintBoundary;
-    final image = await boundary.toImage();
+    final ui.Image image;
+    try {
+      image = await boundary.toImage();
+    } catch (e) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _prepareParticles());
+
+      return;
+    }
+
     final bytes = await image.toByteData();
 
     if (bytes != null && image.width >= 2 && image.height >= 2) {
