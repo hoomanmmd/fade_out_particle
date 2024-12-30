@@ -12,8 +12,8 @@ part 'extensions.dart';
 part 'render_box.dart';
 part 'render_object.dart';
 
-const _particleMaxRadius = 2;
-const _particleMinRadius = 1;
+const _particleMaxRadius = 2.0;
+const _particleMinRadius = 1.0;
 const _spaceBetweenParticles = 3;
 
 /// Fade out Particle effect

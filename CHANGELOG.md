@@ -1,3 +1,6 @@
+## 1.2.2
+* Fix deprecated api calls
+
 ## 1.2.1
 * Fix need paint 
 

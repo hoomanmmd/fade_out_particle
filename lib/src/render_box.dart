@@ -53,7 +53,7 @@ class _RenderBox extends RenderProxyBox {
       Offset(limit, height / 2),
       Offset(limit + fadingLimit, height / 2),
       [
-        const Color(0),
+        const Color(0x00000000),
         const Color(-1),
       ],
     );
@@ -81,7 +81,7 @@ class _RenderBox extends RenderProxyBox {
         continue;
       }
       paint.color = particle.rgbaColor.withOpacity(1 - particleProgress);
-      if (paint.color.opacity == 0) {
+      if (paint.color.a == 0) {
         continue;
       }
       final cx =
@@ -89,7 +89,7 @@ class _RenderBox extends RenderProxyBox {
       final cy = (particle.cx + particle.cy * 3) % 2 - 1;
       final dx = particle.cx + particleProgress * 10 * cx;
       final dy = particle.cy +
-          particleProgress.interpolateYAxis(particle.pathType) * 6 * cy;
+          particleProgress.interpolateYAxis(particle.pathType) * 8 * cy;
       canvas.drawCircle(
         Offset(dx, dy),
         particle.radius,
