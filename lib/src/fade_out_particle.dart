@@ -14,7 +14,22 @@ part 'render_object.dart';
 
 const _particleMaxRadius = 2.0;
 const _particleMinRadius = 1.0;
-const _spaceBetweenParticles = 3;
+const _spaceBetweenParticles = 2;
+
+/// Direction in which particles dissolve away from the widget.
+enum ParticleDirection {
+  /// Original behavior — wipe goes right to left.
+  rightToLeft,
+
+  /// Wipe goes left to right.
+  leftToRight,
+
+  /// Wipe goes bottom to top (particles rise upward).
+  bottomToTop,
+
+  /// Wipe goes top to bottom (particles fall downward).
+  topToBottom,
+}
 
 /// Fade out Particle effect
 @immutable
@@ -31,6 +46,9 @@ class FadeOutParticle extends StatefulWidget {
   /// curve of animation
   final Curve curve;
 
+  /// direction of particle dissolve
+  final ParticleDirection direction;
+
   /// callback to get notified when animation is ended
   final VoidCallback? onAnimationEnd;
 
@@ -40,6 +58,7 @@ class FadeOutParticle extends StatefulWidget {
     required this.child,
     this.duration = const Duration(milliseconds: 1500),
     this.curve = Curves.easeOut,
+    this.direction = ParticleDirection.rightToLeft,
     this.onAnimationEnd,
     super.key,
   });
@@ -99,6 +118,7 @@ class _FadeOutParticleState extends State<FadeOutParticle>
         builder: (BuildContext _, Widget? child) => _RenderObject(
           progress: _animation.value,
           particles: _particles,
+          direction: widget.direction,
           child: child,
         ),
         child: widget.child,
@@ -118,7 +138,6 @@ class _FadeOutParticleState extends State<FadeOutParticle>
       image = await boundary.toImage();
     } catch (e) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _prepareParticles());
-
       return;
     }
 
