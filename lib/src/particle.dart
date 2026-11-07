@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-class Particle extends LinkedListEntry<Particle> {
+base class Particle extends LinkedListEntry<Particle> {
   Particle({
     required this.cx,
     required this.cy,
