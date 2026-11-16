@@ -16,6 +16,11 @@ const _particleMaxRadius = 2.0;
 const _particleMinRadius = 1.0;
 const _spaceBetweenParticles = 2;
 
+/// How far past the child's box the dissolve mask reaches. Anything the child
+/// paints outside its box within this margin (a badge half over the edge, a
+/// shadow) is swept with the wipe; beyond it, it is left as painted.
+const _maskOverflowMargin = 1024.0;
+
 /// Direction in which particles dissolve away from the widget.
 enum ParticleDirection {
   /// Original behavior — wipe goes right to left.

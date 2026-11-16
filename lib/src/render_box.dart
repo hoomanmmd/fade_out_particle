@@ -32,119 +32,97 @@ class _RenderBox extends RenderProxyBox {
   void paint(PaintingContext context, Offset offset) {
     final child = this.child;
     if (child == null || _progress == 0) {
+      layer = null;
       super.paint(context, offset);
       return;
     }
     final double width = child.size.width;
     final double height = child.size.height;
-    final canvas = context.canvas;
 
-    final bounds = Rect.fromLTRB(0, 0, width + 1, height + 1);
-    final paint = Paint();
-
-    canvas.saveLayer(bounds, paint);
-    super.paint(context, offset);
-
-    paint.blendMode = BlendMode.dstOut;
-
+    // The wipe is a dstOut mask layer around the child. It must not be drawn
+    // on a canvas held across `super.paint`: a child that pushes its own layer
+    // (an Opacity, a ColorFiltered, a RepaintBoundary) ends that canvas's
+    // recording and any later draw on it throws "native peer collected".
+    final Shader shader;
     switch (_direction) {
       case ParticleDirection.rightToLeft:
-        _paintHorizontal(canvas, paint, width, height, reverse: false);
+        shader = _horizontalMask(width, height, reverse: false);
         break;
       case ParticleDirection.leftToRight:
-        _paintHorizontal(canvas, paint, width, height, reverse: true);
+        shader = _horizontalMask(width, height, reverse: true);
         break;
       case ParticleDirection.bottomToTop:
-        _paintVertical(canvas, paint, width, height, reverse: false);
+        shader = _verticalMask(width, height, reverse: false);
         break;
       case ParticleDirection.topToBottom:
-        _paintVertical(canvas, paint, width, height, reverse: true);
+        shader = _verticalMask(width, height, reverse: true);
         break;
     }
+    final mask = (layer as ShaderMaskLayer?) ?? ShaderMaskLayer();
+    mask
+      ..shader = shader
+      ..maskRect = (offset & child.size).inflate(_maskOverflowMargin)
+      ..blendMode = BlendMode.dstOut;
+    layer = mask;
+    context.pushLayer(mask, super.paint, offset);
 
-    canvas.restore();
-
-    paint.shader = null;
-    paint.blendMode = BlendMode.srcOver;
-
-    if (_particles != null) {
-      switch (_direction) {
-        case ParticleDirection.rightToLeft:
-        case ParticleDirection.leftToRight:
-          _drawParticlesH(_particles!, width, height, paint, canvas);
-          break;
-        case ParticleDirection.bottomToTop:
-        case ParticleDirection.topToBottom:
-          _drawParticlesV(_particles!, width, height, paint, canvas);
-          break;
-      }
+    if (_particles == null) return;
+    // Read after the child painted: pushing the mask layer replaced it.
+    final canvas = context.canvas;
+    final paint = Paint();
+    canvas.save();
+    canvas.translate(offset.dx, offset.dy);
+    switch (_direction) {
+      case ParticleDirection.rightToLeft:
+      case ParticleDirection.leftToRight:
+        _drawParticlesH(_particles!, width, height, paint, canvas);
+        break;
+      case ParticleDirection.bottomToTop:
+      case ParticleDirection.topToBottom:
+        _drawParticlesV(_particles!, width, height, paint, canvas);
+        break;
     }
+    canvas.restore();
   }
+
+  // The mask shader's origin is the top left of the mask rect, which sits
+  // [_maskOverflowMargin] above and left of the child's box; the gradients
+  // below are written in box coordinates and shifted by that margin. Past the
+  // gradient the shader clamps: transparent (child kept) on the side the wipe
+  // has not reached, opaque (child erased) on the side it has.
 
   // ── Horizontal wipe (original right-to-left + mirrored left-to-right) ───
 
-  void _paintHorizontal(Canvas canvas, Paint paint, double width, double height,
-      {required bool reverse}) {
+  Shader _horizontalMask(double width, double height, {required bool reverse}) {
     final animW = width.limitedAnimationWidth;
     final limit = reverse
         ? width * (1 + animW / width) * _progress
         : width - width * (1 + animW / width) * _progress;
     final fadingLimit = math.min(width / 3, 10);
-
-    final Rect clipRect;
-    final Offset gradStart;
-    final Offset gradEnd;
-
-    if (reverse) {
-      clipRect = Rect.fromLTRB(-1.0, -1.0, limit, height + 1);
-      gradStart = Offset(limit, height / 2);
-      gradEnd = Offset(limit - fadingLimit, height / 2);
-    } else {
-      clipRect = Rect.fromLTRB(limit, -1.0, width + 1, height + 1);
-      gradStart = Offset(limit, height / 2);
-      gradEnd = Offset(limit + fadingLimit, height / 2);
-    }
-
-    paint.shader = ui.Gradient.linear(
-      gradStart,
-      gradEnd,
+    final x = limit + _maskOverflowMargin;
+    final y = height / 2 + _maskOverflowMargin;
+    return ui.Gradient.linear(
+      Offset(x, y),
+      Offset(reverse ? x - fadingLimit : x + fadingLimit, y),
       [const Color(0x00000000), const Color(-1)],
     );
-    canvas.drawRect(clipRect, paint);
   }
 
   // ── Vertical wipe (bottom-to-top + mirrored top-to-bottom) ──────────────
 
-  void _paintVertical(Canvas canvas, Paint paint, double width, double height,
-      {required bool reverse}) {
+  Shader _verticalMask(double width, double height, {required bool reverse}) {
     final animH = height.limitedAnimationWidth;
     final limit = reverse
         ? height * (1 + animH / height) * _progress
         : height - height * (1 + animH / height) * _progress;
     final fadingLimit = math.min(height / 3, 10);
-
-    final Rect clipRect;
-    final Offset gradStart;
-    final Offset gradEnd;
-
-    if (reverse) {
-      // top-to-bottom: clip from top, gradient fades downward
-      clipRect = Rect.fromLTRB(-1.0, -1.0, width + 1, limit);
-      gradStart = Offset(width / 2, limit);
-      gradEnd = Offset(width / 2, limit - fadingLimit);
-    } else {
-      // bottom-to-top: clip from bottom, gradient fades upward
-      clipRect = Rect.fromLTRB(-1.0, limit, width + 1, height + 1);
-      gradStart = Offset(width / 2, limit);
-      gradEnd = Offset(width / 2, limit + fadingLimit);
-    }
-
-    paint.shader = ui.Gradient.linear(
-      gradStart,
-      gradEnd,
+    final x = width / 2 + _maskOverflowMargin;
+    final y = limit + _maskOverflowMargin;
+    return ui.Gradient.linear(
+      Offset(x, y),
+      Offset(x, reverse ? y - fadingLimit : y + fadingLimit),
       [const Color(0x00000000), const Color(-1)],
     );
-    canvas.drawRect(clipRect, paint);
   }
 
   // ── Draw particles for horizontal directions ────────────────────────────
