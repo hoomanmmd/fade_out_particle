@@ -55,7 +55,7 @@ Widget _card(_ChildKind kind) {
         Positioned(
           top: 0,
           right: 12,
-          // `Opacity` above 0 is a repaint boundary (it pushes a layer).
+          // An `Opacity` above 0 pushes its own OpacityLayer.
           child: kind == _ChildKind.opacityBadge
               ? const Opacity(opacity: 1.0, child: badge)
               : badge,
@@ -71,11 +71,13 @@ class _Host extends StatefulWidget {
     required this.kind,
     required this.direction,
     required this.outer,
+    required this.onEnd,
   });
 
   final _ChildKind kind;
   final ParticleDirection direction;
   final GlobalKey outer;
+  final VoidCallback onEnd;
 
   @override
   State<_Host> createState() => _HostState();
@@ -99,6 +101,7 @@ class _HostState extends State<_Host> {
                 disappear: disappear,
                 duration: const Duration(milliseconds: 500),
                 direction: widget.direction,
+                onAnimationEnd: widget.onEnd,
                 child: _card(widget.kind),
               ),
             ),
@@ -133,42 +136,78 @@ int _overflowPixels(Uint8List rgba) {
   return count;
 }
 
-/// Runs a whole dissolve, returning every error thrown while it painted and
-/// the overflow-strip pixel count sampled at each frame.
-Future<({List<Object> errors, List<int> overflow})> _dissolve(
+/// Whether the card's body at the edge where [direction] starts its wipe no
+/// longer shows the card colour, i.e. the wipe has begun painting.
+bool _wipeStarted(Uint8List rgba, ParticleDirection direction) {
+  const stride = _cardWidth + 2 * _padding;
+  final (double x, double y) = switch (direction) {
+    ParticleDirection.bottomToTop => (_padding + 150, _padding + _cardHeight - 2),
+    ParticleDirection.topToBottom => (_padding + 150, _padding + 1),
+    ParticleDirection.rightToLeft => (_padding + _cardWidth - 2, _padding + 60),
+    ParticleDirection.leftToRight => (_padding + 1, _padding + 60),
+  };
+  final i = (y.toInt() * stride.toInt() + x.toInt()) * 4;
+  return (rgba[i] - 0x33).abs() > 8 ||
+      (rgba[i + 1] - 0x66).abs() > 8 ||
+      (rgba[i + 2] - 0xCC).abs() > 8;
+}
+
+/// Runs a dissolve until its `onAnimationEnd` fires (bounded), returning every
+/// error thrown while it painted, whether it ended, and per sampled frame the
+/// overflow-strip pixel count and whether the wipe had begun.
+///
+/// The particle snapshot completes on real time only, so every frame also
+/// yields to `runAsync`; a slow host takes more frames, not a vacuous pass.
+Future<
+    ({
+      List<Object> errors,
+      bool ended,
+      List<int> overflow,
+      List<bool> started,
+    })> _dissolve(
   WidgetTester tester, {
   required _ChildKind kind,
   required ParticleDirection direction,
-  bool sampleOverflow = false,
+  bool sample = false,
 }) async {
   final errors = <Object>[];
   final overflow = <int>[];
+  final started = <bool>[];
+  var ended = false;
   final previous = FlutterError.onError;
   FlutterError.onError = (details) => errors.add(details.exception);
   try {
     final key = GlobalKey<_HostState>();
     final outer = GlobalKey();
-    await tester.pumpWidget(
-      _Host(key: key, kind: kind, direction: direction, outer: outer),
-    );
-    if (sampleOverflow) overflow.add(_overflowPixels(await _snapshot(tester, outer)));
+    await tester.pumpWidget(_Host(
+      key: key,
+      kind: kind,
+      direction: direction,
+      outer: outer,
+      onEnd: () => ended = true,
+    ));
+    Future<void> takeSample() async {
+      final pixels = await _snapshot(tester, outer);
+      overflow.add(_overflowPixels(pixels));
+      started.add(_wipeStarted(pixels, direction));
+    }
+
+    if (sample) await takeSample();
     key.currentState!.startDissolve();
     await tester.pump();
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 300)),
-    );
-    for (var frame = 0; frame < 12; frame++) {
+    for (var frame = 0; frame < 100 && !ended; frame++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
       await tester.pump(const Duration(milliseconds: 50));
       final pending = tester.takeException();
       if (pending != null) errors.add(pending);
-      if (sampleOverflow) {
-        overflow.add(_overflowPixels(await _snapshot(tester, outer)));
-      }
+      if (sample) await takeSample();
     }
   } finally {
     FlutterError.onError = previous;
   }
-  return (errors: errors, overflow: overflow);
+  return (errors: errors, ended: ended, overflow: overflow, started: started);
 }
 
 void main() {
@@ -178,6 +217,9 @@ void main() {
           (tester) async {
         final result =
             await _dissolve(tester, kind: kind, direction: direction);
+        expect(result.ended, isTrue,
+            reason: 'the dissolve never reached its end, so no wipe frame '
+                'was proven to paint');
         expect(
           result.errors,
           isEmpty,
@@ -189,8 +231,9 @@ void main() {
     }
   }
 
-  // Content the child paints outside its box goes with the wipe: fully
-  // visible before the dissolve, gone once it has finished.
+  // Content the child paints outside its box goes with the wipe (A-2831
+  // ruling (a), swept, not clipped): fully visible before the dissolve, gone
+  // once it has finished.
   for (final direction in ParticleDirection.values) {
     testWidgets('dissolve $direction sweeps the overflow above the box',
         (tester) async {
@@ -198,13 +241,27 @@ void main() {
         tester,
         kind: _ChildKind.plain,
         direction: direction,
-        sampleOverflow: true,
+        sample: true,
       );
+      final frames = 'overflow per frame: ${result.overflow}, '
+          'wipe begun: ${result.started}';
       expect(result.errors, isEmpty);
-      expect(result.overflow.first, 400,
-          reason: 'overflow per frame: ${result.overflow}');
-      expect(result.overflow.last, 0,
-          reason: 'overflow per frame: ${result.overflow}');
+      expect(result.ended, isTrue, reason: frames);
+      expect(result.overflow.first, 400, reason: frames);
+      expect(result.overflow.last, 0, reason: frames);
+      // Bottom-to-top and right-to-left reach the strip late: while the wipe
+      // is already eating the card, the strip is still on screen. A clip to
+      // the box (the look before A-2831) hides it from the first wipe frame.
+      if (direction == ParticleDirection.bottomToTop ||
+          direction == ParticleDirection.rightToLeft) {
+        var stillShown = false;
+        for (var i = 0; i < result.overflow.length; i++) {
+          if (result.started[i] && result.overflow[i] > 0) stillShown = true;
+        }
+        expect(stillShown, isTrue,
+            reason: 'no frame shows the overflow once the wipe has begun '
+                '(clipped, not swept): $frames');
+      }
     });
   }
 }

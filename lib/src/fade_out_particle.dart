@@ -16,9 +16,17 @@ const _particleMaxRadius = 2.0;
 const _particleMinRadius = 1.0;
 const _spaceBetweenParticles = 2;
 
-/// How far past the child's box the dissolve mask reaches. Anything the child
-/// paints outside its box within this margin (a badge half over the edge, a
-/// shadow) is swept with the wipe; beyond it, it is left as painted.
+/// How far past the child's box the dissolve mask reaches. What the child
+/// paints outside its box (a badge half over the edge, a shadow) goes with the
+/// wipe only where the mask and the wipe both reach it:
+/// - on the two sides parallel to the wipe's travel, up to this margin, erased
+///   as the wipe line passes;
+/// - on the side the wipe starts from, up to this margin, erased from the
+///   first frame;
+/// - on the side the wipe ends at, only up to the wipe's overshoot past that
+///   edge, min(extent, 128) less the fade (up to 10 px), because the wipe
+///   stops there at progress 1.
+/// Anything further out is left as painted until the widget is removed.
 const _maskOverflowMargin = 1024.0;
 
 /// Direction in which particles dissolve away from the widget.
