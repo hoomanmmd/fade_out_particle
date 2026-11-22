@@ -1,3 +1,8 @@
+## 1.3.0
+* Improve performance
+* Add FadeInParticle (@mitsh)
+* Add direction to FadeOutParticle (@mitsh)
+
 ## 1.2.2
 * Fix deprecated api calls
 

@@ -45,6 +45,8 @@ class FadeInParticle extends StatefulWidget {
   /// Called when the animation completes.
   final VoidCallback? onAnimationEnd;
 
+  final double initialOpacity;
+
   const FadeInParticle({
     required this.appear,
     required this.child,
@@ -53,6 +55,7 @@ class FadeInParticle extends StatefulWidget {
     this.curve = Curves.easeOut,
     this.direction = ParticleDirection.bottomToTop,
     this.onAnimationEnd,
+    this.initialOpacity = 0.0,
     super.key,
   });
 
@@ -93,8 +96,12 @@ class _FadeInParticleState extends State<FadeInParticle>
       _controller.duration = widget.duration;
       _animation.curve = widget.curve;
     }
-    if (oldWidget.appear != widget.appear && widget.appear) {
-      _startAppear();
+    if (oldWidget.appear != widget.appear) {
+      if(widget.appear){
+        _startAppear();
+      }else{
+        _reset();
+      }
     }
     super.didUpdateWidget(oldWidget);
   }
@@ -176,7 +183,9 @@ class _FadeInParticleState extends State<FadeInParticle>
           children: [
             // The actual widget — fades in as particles converge
             Opacity(
-              opacity: _particles != null ? progress.clamp(0.0, 1.0) : 1.0,
+              opacity: _particles != null
+                  ? progress.clamp(0.0, 1.0)
+                  : widget.initialOpacity,
               child: child,
             ),
             // Converging particles overlay
@@ -207,6 +216,12 @@ class _FadeInParticleState extends State<FadeInParticle>
         child: widget.child,
       ),
     );
+  }
+
+  void _reset() {
+    setState(() {
+      _particles = null;
+    });
   }
 
   @override

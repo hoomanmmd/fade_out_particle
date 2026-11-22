@@ -1,12 +1,12 @@
-import 'dart:collection';
-
-base class Particle extends LinkedListEntry<Particle> {
+base class Particle {
   Particle({
     required this.cx,
     required this.cy,
     required this.radius,
     required this.rgbaColor,
     required this.pathType,
+    required this.xFactor,
+    required this.yFactor,
   });
 
   final int cx;
@@ -14,4 +14,6 @@ base class Particle extends LinkedListEntry<Particle> {
   final double radius;
   final int rgbaColor;
   final int pathType;
+  final double xFactor;
+  final double yFactor;
 }

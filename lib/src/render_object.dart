@@ -3,7 +3,7 @@ part of 'fade_out_particle.dart';
 @immutable
 class _RenderObject extends SingleChildRenderObjectWidget {
   final double progress;
-  final LinkedList<Particle>? particles;
+  final Iterable<Particle>? particles;
   final ParticleDirection direction;
 
   const _RenderObject({

@@ -1,20 +1,15 @@
-import 'dart:collection';
 import 'dart:math' as math;
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:fade_out_particle/src/particle_generation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
+import 'extensions.dart';
 import 'particle.dart';
 
-part 'extensions.dart';
 part 'render_box.dart';
 part 'render_object.dart';
-
-const _particleMaxRadius = 2.0;
-const _particleMinRadius = 1.0;
-const _spaceBetweenParticles = 2;
 
 /// How far past the child's box the dissolve mask reaches. What the child
 /// paints outside its box (a badge half over the edge, a shadow) goes with the
@@ -95,7 +90,7 @@ class _FadeOutParticleState extends State<FadeOutParticle>
     parent: _controller,
     curve: widget.curve,
   );
-  LinkedList<Particle>? _particles;
+  Iterable<Particle>? _particles;
 
   @override
   void initState() {
@@ -157,56 +152,19 @@ class _FadeOutParticleState extends State<FadeOutParticle>
     final bytes = await image.toByteData();
 
     if (bytes != null && image.width >= 2 && image.height >= 2) {
-      _generateParticles(bytes, image.width, image.height);
-    }
-
-    image.dispose();
-  }
-
-  void _generateParticles(ByteData bytes, int width, int height) {
-    final verticalCount = math.max(1, height ~/ _spaceBetweenParticles);
-    final horizontalCount = math.max(1, width ~/ _spaceBetweenParticles);
-
-    final particles = LinkedList<Particle>();
-    int horizontalOffset;
-    const halfSpace = _spaceBetweenParticles ~/ 2;
-    int verticalOffset = halfSpace;
-    final random = math.Random();
-    for (int i = 0; i < verticalCount; i++) {
-      horizontalOffset = halfSpace;
-      for (var j = 0; j < horizontalCount; j++) {
-        final rgbaColor = bytes.maybeNonTransparentColor(
-          horizontalOffset,
-          verticalOffset,
-          width,
-          halfSpace,
-        );
-        if (!rgbaColor.isTransparent) {
-          particles.add(
-            Particle(
-              cx: horizontalOffset,
-              cy: verticalOffset,
-              rgbaColor: rgbaColor,
-              radius: _generateRandomRadius(random),
-              pathType: random.nextInt(6),
-            ),
-          );
-        }
-        horizontalOffset += _spaceBetweenParticles;
-      }
-      verticalOffset += _spaceBetweenParticles;
-    }
-    if (mounted) {
+      final particles = await ParticleGeneration.generateParticlesOnIsolate(
+        image.width,
+        image.height,
+        bytes,
+      );
       setState(() {
         _particles = particles;
         _controller.forward();
       });
     }
-  }
 
-  double _generateRandomRadius(math.Random random) =>
-      random.nextDouble() * (_particleMaxRadius - _particleMinRadius) +
-      _particleMinRadius;
+    image.dispose();
+  }
 
   @override
   void dispose() {

@@ -2,7 +2,7 @@ part of 'fade_out_particle.dart';
 
 class _RenderBox extends RenderProxyBox {
   double _progress;
-  LinkedList<Particle>? _particles;
+  Iterable<Particle>? _particles;
   ParticleDirection _direction;
 
   _RenderBox(this._progress, this._particles, this._direction);
@@ -16,7 +16,7 @@ class _RenderBox extends RenderProxyBox {
     markNeedsPaint();
   }
 
-  set particles(LinkedList<Particle>? newValue) {
+  set particles(Iterable<Particle>? newValue) {
     if (newValue == _particles) return;
     _particles = newValue;
     markNeedsPaint();
@@ -74,12 +74,16 @@ class _RenderBox extends RenderProxyBox {
     canvas.translate(offset.dx, offset.dy);
     switch (_direction) {
       case ParticleDirection.rightToLeft:
+        _drawParticlesHorizontal(width, height, paint, canvas);
+        break;
       case ParticleDirection.leftToRight:
-        _drawParticlesH(_particles!, width, height, paint, canvas);
+        _drawParticlesHorizontalReversed(width, height, paint, canvas);
         break;
       case ParticleDirection.bottomToTop:
+        _drawParticlesVertical(width, height, paint, canvas);
+        break;
       case ParticleDirection.topToBottom:
-        _drawParticlesV(_particles!, width, height, paint, canvas);
+        _drawParticlesVerticalReversed(width, height, paint, canvas);
         break;
     }
     canvas.restore();
@@ -127,66 +131,112 @@ class _RenderBox extends RenderProxyBox {
 
   // ── Draw particles for horizontal directions ────────────────────────────
 
-  void _drawParticlesH(LinkedList<Particle> particles, double width,
-      double height, Paint paint, Canvas canvas) {
-    final isReverse = _direction == ParticleDirection.leftToRight;
+  void _drawParticlesHorizontal(
+    double width,
+    double height,
+    Paint paint,
+    Canvas canvas,
+  ) {
     final animW = width.limitedAnimationWidth;
-    final limit = isReverse
-        ? width * (1 + animW / width) * _progress
-        : width - width * (1 + animW / width) * _progress;
+    final limit = width - width * (1 + animW / width) * _progress;
 
-    for (final particle in particles) {
-      final double px = particle.cx.toDouble();
-      if (!isReverse && px < limit - 1) continue;
-      if (isReverse && px > limit + 1) continue;
+    for (final particle in _particles!) {
+      if (particle.cx < limit - 1) continue;
 
-      final dist = isReverse ? (limit - px) : (px - limit);
+      final dist = (particle.cx - limit);
       final particleProgress = dist.particleProgress(width);
       if (particleProgress >= 1) continue;
 
       paint.color = particle.rgbaColor.withOpacity(1 - particleProgress);
       if (paint.color.a == 0) continue;
 
-      final cx =
-          (1 + _particleMaxRadius - particle.radius) / _particleMaxRadius;
-      final cy = (particle.cx + particle.cy * 3) % 2 - 1;
-      final dxSign = isReverse ? -1.0 : 1.0;
-      final dx = px + dxSign * particleProgress * 10 * cx;
+      final dx = particle.cx + particleProgress * particle.yFactor;
       final dy = particle.cy +
-          particleProgress.interpolateYAxis(particle.pathType) * 8 * cy;
+          particleProgress.interpolateYAxis(particle.pathType) *
+              particle.xFactor;
+      canvas.drawCircle(Offset(dx, dy), particle.radius, paint);
+    }
+  }
+
+  void _drawParticlesHorizontalReversed(
+    double width,
+    double height,
+    Paint paint,
+    Canvas canvas,
+  ) {
+    final animW = width.limitedAnimationWidth;
+    final limit = width * (1 + animW / width) * _progress;
+
+    for (final particle in _particles!) {
+      if (particle.cx > limit + 1) continue;
+
+      final dist = limit - particle.cx;
+      final particleProgress = dist.particleProgress(width);
+      if (particleProgress >= 1) continue;
+
+      paint.color = particle.rgbaColor.withOpacity(1 - particleProgress);
+      if (paint.color.a == 0) continue;
+
+      final dx = particle.cx - particleProgress * particle.yFactor;
+      final dy = particle.cy +
+          particleProgress.interpolateYAxis(particle.pathType) *
+              particle.xFactor;
       canvas.drawCircle(Offset(dx, dy), particle.radius, paint);
     }
   }
 
   // ── Draw particles for vertical directions ──────────────────────────────
 
-  void _drawParticlesV(LinkedList<Particle> particles, double width,
-      double height, Paint paint, Canvas canvas) {
-    final isReverse = _direction == ParticleDirection.topToBottom;
+  void _drawParticlesVertical(
+    double width,
+    double height,
+    Paint paint,
+    Canvas canvas,
+  ) {
     final animH = height.limitedAnimationWidth;
-    final limit = isReverse
-        ? height * (1 + animH / height) * _progress
-        : height - height * (1 + animH / height) * _progress;
+    final limit = height - height * (1 + animH / height) * _progress;
 
-    for (final particle in particles) {
-      final double py = particle.cy.toDouble();
-      if (!isReverse && py < limit - 1) continue;
-      if (isReverse && py > limit + 1) continue;
+    for (final particle in _particles!) {
+      if (particle.cy < limit - 1) continue;
 
-      final dist = isReverse ? (limit - py) : (py - limit);
+      final dist = particle.cy - limit;
       final particleProgress = dist.particleProgress(height);
       if (particleProgress >= 1) continue;
 
       paint.color = particle.rgbaColor.withOpacity(1 - particleProgress);
       if (paint.color.a == 0) continue;
 
-      final cy =
-          (1 + _particleMaxRadius - particle.radius) / _particleMaxRadius;
-      final cx = (particle.cx + particle.cy * 3) % 2 - 1;
-      final dySign = isReverse ? 1.0 : -1.0;
       final dx = particle.cx +
-          particleProgress.interpolateYAxis(particle.pathType) * 8 * cx;
-      final dy = py + dySign * particleProgress * 10 * cy;
+          particleProgress.interpolateYAxis(particle.pathType) *
+              particle.xFactor;
+      final dy = particle.cy - particleProgress * particle.yFactor;
+      canvas.drawCircle(Offset(dx, dy), particle.radius, paint);
+    }
+  }
+
+  void _drawParticlesVerticalReversed(
+    double width,
+    double height,
+    Paint paint,
+    Canvas canvas,
+  ) {
+    final animH = height.limitedAnimationWidth;
+    final limit = height * (1 + animH / height) * _progress;
+    for (final particle in _particles!) {
+      final double py = particle.cy.toDouble();
+      if (py > limit + 1) continue;
+
+      final dist = limit - py;
+      final particleProgress = dist.particleProgress(height);
+      if (particleProgress >= 1) continue;
+
+      paint.color = particle.rgbaColor.withOpacity(1 - particleProgress);
+      if (paint.color.a == 0) continue;
+
+      final dx = particle.cx +
+          particleProgress.interpolateYAxis(particle.pathType) *
+              particle.xFactor;
+      final dy = py + particleProgress * particle.yFactor;
       canvas.drawCircle(Offset(dx, dy), particle.radius, paint);
     }
   }

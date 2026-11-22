@@ -1,5 +1,5 @@
 import 'package:fade_out_particle/fade_out_particle.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() => runApp(const MyApp());
 
@@ -24,7 +24,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool _disappear = true;
+  bool _disappear = false;
 
   @override
   Widget build(BuildContext context) {
@@ -33,28 +33,11 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FadeOutParticle(
-              disappear: _disappear,
-              duration: const Duration(milliseconds: 3000),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.flutter_dash,
-                    size: 52,
-                    color: Theme.of(context).primaryColorDark,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Fade out Particle',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w900,
-                        ),
-                  ),
-                ],
-              ),
-              onAnimationEnd: () => print('animation ended'),
-            ),
+            _fadeOutParticle(),
+            _fadeOutParticleRtl(),
+            _fadeOutParticleBtt(),
+            _fadeOutParticleTtb(),
+            _fadeInParticleBtt(),
             const SizedBox(height: 150),
             OutlinedButton(
               onPressed: () => setState(() => _disappear = !_disappear),
@@ -63,6 +46,134 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _fadeOutParticle() {
+    return FadeOutParticle(
+      disappear: _disappear,
+      duration: const Duration(milliseconds: 3000),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.flutter_dash,
+            size: 52,
+            color: Theme.of(context).primaryColorDark,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Fade out Particle',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+        ],
+      ),
+      onAnimationEnd: () => print('animation ended'),
+    );
+  }
+
+  Widget _fadeOutParticleRtl() {
+    return FadeOutParticle(
+      disappear: _disappear,
+      direction: ParticleDirection.leftToRight,
+      duration: const Duration(milliseconds: 3000),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.flutter_dash,
+            size: 52,
+            color: Theme.of(context).primaryColorDark,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Fade out Particle',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+        ],
+      ),
+      onAnimationEnd: () => print('animation ended'),
+    );
+  }
+
+  Widget _fadeOutParticleTtb() {
+    return FadeOutParticle(
+      disappear: _disappear,
+      direction: ParticleDirection.topToBottom,
+      duration: const Duration(milliseconds: 3000),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.flutter_dash,
+            size: 52,
+            color: Theme.of(context).primaryColorDark,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Fade out Particle',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+        ],
+      ),
+      onAnimationEnd: () => print('animation ended'),
+    );
+  }
+
+  Widget _fadeOutParticleBtt() {
+    return FadeOutParticle(
+      disappear: _disappear,
+      direction: ParticleDirection.bottomToTop,
+      duration: const Duration(milliseconds: 3000),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.flutter_dash,
+            size: 52,
+            color: Theme.of(context).primaryColorDark,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Fade out Particle',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+        ],
+      ),
+      onAnimationEnd: () => print('animation ended'),
+    );
+  }
+  Widget _fadeInParticleBtt() {
+    return FadeInParticle(
+      appear: _disappear,
+      direction: ParticleDirection.bottomToTop,
+      duration: const Duration(milliseconds: 2000),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.flutter_dash,
+            size: 52,
+            color: Theme.of(context).primaryColorDark,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Fade in Particle',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+        ],
+      ),
+      onAnimationEnd: () => print('animation ended'),
     );
   }
 }

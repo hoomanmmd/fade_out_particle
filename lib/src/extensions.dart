@@ -1,6 +1,8 @@
-part of 'fade_out_particle.dart';
+import 'dart:math' as math;
+import 'dart:typed_data';
+import 'dart:ui';
 
-extension _IntExtensions on int {
+extension IntExtensions on int {
   Color withOpacity(double opacity) {
     final resultOpacity = (opacity * (this & 0xFF) * 0.7).toInt();
     return Color((this >> 8 & 0x00FFFFFF) | (resultOpacity << 24));
@@ -9,7 +11,7 @@ extension _IntExtensions on int {
   bool get isTransparent => (this & 0xFF) == 0;
 }
 
-extension _DoubleExtensions on double {
+extension DoubleExtensions on double {
   double interpolateYAxis(int type) {
     switch (type) {
       case 0:
@@ -33,7 +35,7 @@ extension _DoubleExtensions on double {
   double get limitedAnimationWidth => math.min(this, 128);
 }
 
-extension _ByteDataExtensions on ByteData {
+extension ByteDataExtensions on ByteData {
   int maybeNonTransparentColor(int i, int j, int width, int space) {
     final offset = (i - space + j * width) * 4;
     if (space == 0 || getInt8(offset + 3) != 0) {
